@@ -2,6 +2,7 @@ import './globals.css';
 import ScrollManager from '@/components/ScrollManager';
 import CookieBanner from '@/components/CookieBanner';
 import { AuthProvider } from '@/lib/AuthContext';
+import { CurrencyProvider } from '@/lib/CurrencyContext';
 
 export const metadata = {
   title: 'Astra NCR | Custom NCR Printing — India, UK & USA',
@@ -30,23 +31,25 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <AuthProvider>
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "LocalBusiness",
-              "name": "Astra Enterprises",
-              "description": "Custom NCR carbonless printing for businesses",
-              "url": "https://www.astraenterprises.co",
-              "priceRange": "££",
-              "currenciesAccepted": "GBP, USD, INR",
-              "paymentAccepted": "Stripe, Razorpay, PayPal",
-              "areaServed": ["IN", "GB", "US"]
-            })}}
-          />
-          <ScrollManager />
-          {children}
-          <CookieBanner />
+          <CurrencyProvider>
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "LocalBusiness",
+                "name": "Astra Enterprises",
+                "description": "Custom NCR carbonless printing for businesses",
+                "url": "https://www.astraenterprises.co",
+                "priceRange": "££",
+                "currenciesAccepted": "GBP, USD, INR",
+                "paymentAccepted": "Stripe, Razorpay, PayPal",
+                "areaServed": ["IN", "GB", "US"]
+              })}}
+            />
+            <ScrollManager />
+            {children}
+            <CookieBanner />
+          </CurrencyProvider>
         </AuthProvider>
       </body>
     </html>

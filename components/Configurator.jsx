@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { useCurrency } from '@/lib/CurrencyContext';
 
 const CustomSelect = ({ options, value, onChange, name }) => {
   const [open, setOpen] = useState(false);
@@ -48,6 +49,7 @@ const CustomSelect = ({ options, value, onChange, name }) => {
 export default function Configurator() {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef(null);
+  const { convert, currency, symbols } = useCurrency();
 
   const [config, setConfig] = useState({
     formType: 'invoice',
@@ -312,18 +314,13 @@ export default function Configurator() {
               <div style={{ fontSize: '0.9rem', color: '#94A3B8' }}>Estimated Total</div>
               {config.formType === 'bundle' && (
                 <div style={{ fontSize: '0.85rem', textDecoration: 'line-through', color: '#94A3B8', textAlign: 'center', marginBottom: '4px' }}>
-                  Was: ${originalPrice.toLocaleString()}
+                  Was: {convert(Math.round(originalPrice * 0.79))}
                 </div>
               )}
-              <div key={price} style={{ fontSize: '2.4rem', fontWeight: 'bold', color: config.formType === 'bundle' ? 'var(--success)' : 'var(--accent-gold)', animation: 'countUp 0.3s ease-out forwards', textAlign: 'center' }}>
-                ${price.toLocaleString()}
+              <div key={`${price}-${currency}`} style={{ fontSize: '2.4rem', fontWeight: 'bold', color: config.formType === 'bundle' ? 'var(--success)' : 'var(--accent-gold)', animation: 'countUp 0.3s ease-out forwards', textAlign: 'center' }}>
+                {convert(Math.round(price * 0.79))}
               </div>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '0.5rem', fontSize: '0.85rem', color: '#94A3B8', flexWrap: 'wrap' }}>
-                <span>£{Math.round(price * 0.79).toLocaleString()}</span>
-                <span style={{ opacity: 0.4 }}>·</span>
-                <span>₹{Math.round(price * 83).toLocaleString()}</span>
-              </div>
-              <div style={{ fontSize: '0.75rem', color: '#64748B', textAlign: 'center', marginTop: '0.4rem' }}>USD · GBP · INR — indicative pricing</div>
+              <div style={{ fontSize: '0.75rem', color: '#64748B', textAlign: 'center', marginTop: '0.4rem' }}>indicative pricing &mdash; click {symbols[currency]} in navbar to switch currency</div>
             </div>
             <button className="btn btn-primary" style={{ width: '100%' }}>Proceed to Quote</button>
             <div className="config-tag-chips">

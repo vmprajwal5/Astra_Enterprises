@@ -4,6 +4,7 @@ import UserDashboard from './UserDashboard';
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { useCurrency } from '@/lib/CurrencyContext';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -11,9 +12,15 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   
   const { user, profile } = useAuth();
+  const { currency, setCurrency, currencies, symbols } = useCurrency();
   const [dashboardOpen, setDashboardOpen] = useState(false);
   const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  const toggleCurrency = () => {
+    const idx = currencies.indexOf(currency);
+    setCurrency(currencies[(idx + 1) % currencies.length]);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -147,6 +154,17 @@ export default function Navbar() {
             ))}
           </div>
             
+            {/* Currency switcher */}
+            <button
+              onClick={toggleCurrency}
+              className="currency-switcher-btn"
+              title="Switch currency"
+            >
+              <span className="currency-symbol-only">{symbols[currency]}</span>
+              <span className="currency-full">{symbols[currency]} {currency}</span>
+              <span style={{ fontSize: '10px', opacity: 0.7 }}>▼</span>
+            </button>
+
             <a
               href="#quote"
               style={{
@@ -218,6 +236,28 @@ export default function Navbar() {
             <a href="/#process" onClick={() => setMobileOpen(false)} style={{ animationDelay: '0.25s' }}>Process</a>
           </div>
           <div className="mobile-actions" style={{ animationDelay: '0.25s' }}>
+            {/* Mobile currency switcher */}
+            <button
+              onClick={toggleCurrency}
+              style={{
+                width: '100%',
+                background: 'rgba(255,107,53,0.15)',
+                border: '1px solid rgba(255,107,53,0.4)',
+                color: '#FF6B35',
+                padding: '12px 16px',
+                borderRadius: '100px',
+                fontSize: '14px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                fontFamily: 'Inter, sans-serif',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+            >
+              {symbols[currency]} {currency} <span style={{ fontSize: '10px', opacity: 0.7 }}>▼ tap to switch</span>
+            </button>
             {!user ? (
               <Link href="/login" className="nav-signin-btn-mobile" onClick={() => setMobileOpen(false)} style={{ textDecoration: 'none', textAlign: 'center', display: 'block', boxSizing: 'border-box' }}>Sign In</Link>
             ) : (
@@ -407,8 +447,35 @@ export default function Navbar() {
         @media (max-width: 768px) {
           .hamburger { display: flex; }
           .new-nav-links, .nav-actions { display: none !important; }
+          .desktop-nav { display: none !important; }
         }
 
+        .currency-switcher-btn {
+          background: rgba(255,107,53,0.15);
+          border: 1px solid rgba(255,107,53,0.4);
+          color: #FF6B35;
+          padding: 6px 14px;
+          border-radius: 100px;
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+          font-family: Inter, sans-serif;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          white-space: nowrap;
+        }
+        .currency-switcher-btn:hover {
+          background: rgba(255,107,53,0.25);
+          border-color: #FF6B35;
+        }
+        .currency-symbol-only { display: none; }
+        .currency-full { display: inline; }
+        @media (max-width: 900px) {
+          .currency-symbol-only { display: inline; }
+          .currency-full { display: none; }
+        }
       `}} />
     </>
   );

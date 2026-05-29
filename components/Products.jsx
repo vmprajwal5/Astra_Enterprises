@@ -1,10 +1,12 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useCurrency } from '@/lib/CurrencyContext';
 
 export default function Products() {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef(null);
+  const { convert } = useCurrency();
 
   useEffect(() => {
     async function loadProducts() {
@@ -35,25 +37,27 @@ export default function Products() {
   const staticProducts = [
     {
       name: 'Blank NCR Sheets',
-      description: 'Plain carbonless paper sets ready for your custom stamp or handwriting. Available in 2, 3, and 4-part sets.',
+      basePriceGBP: 15,
+      description: 'Pre-collated carbonless sets ready for your own printing press or handwriting.',
       features: ['2, 3 or 4-part sets', 'White / Yellow / Pink paper', 'Standard A4 & A5 sizes', 'Ideal for tradespeople'],
-      price_usd: 20, price_gbp: 15, price_inr: 1500
     },
     {
       name: 'Custom Printed NCR',
-      description: 'Fully custom-designed NCR forms with your logo, branding, and layout. Perfect for invoices, estimates, and receipts.',
+      basePriceGBP: 45,
+      description: 'Fully custom-designed NCR forms with your logo, branding, and layout.',
       features: ['Full-colour or black ink', 'Logo & branding included', 'Sequential numbering', 'Padded & loose options'],
-      price_usd: 55, price_gbp: 45, price_inr: 4500
     },
     {
       name: 'Digital Templates',
-      description: 'Editable invoice and receipt templates for digital use. Compatible with Google Docs, Word, and PDF editors.',
-      features: ['Instant download', 'Editable fields', 'Professionally designed', 'Lifetime access'],
-      price_usd: 12, price_gbp: 10, price_inr: 999
+      basePriceGBP: 10,
+      description: 'Ready-to-use digital invoice and receipt templates for contractors and salons.',
+      features: ['Instant download', 'Easily editable', 'Professionally designed', 'Industry specific'],
     }
   ];
 
-  const displayProducts = products.length > 0 ? products : staticProducts;
+  const displayProducts = products.length > 0
+    ? products.map(p => ({ ...p, basePriceGBP: p.price_gbp || 15 }))
+    : staticProducts;
 
   return (
     <section id="products" ref={sectionRef} style={{ padding: '6rem 5%' }}>
@@ -71,10 +75,6 @@ export default function Products() {
                         : product.name.toLowerCase().includes('digital') ? 'digital-ncr' 
                         : 'custom-ncr';
             
-            const priceUsd = product.price_usd || 0;
-            const priceGbp = product.price_gbp || Math.round(priceUsd * 0.79);
-            const priceInr = product.price_inr || Math.round(priceUsd * 83);
-
             return (
             <div key={i} className={`product-card ${isVisible ? `anim-scale-in delay-${i + 1}` : ''}`} style={{ opacity: 0 }}>
               <div className="card-top-edge"></div>
@@ -133,11 +133,7 @@ export default function Products() {
                 <div className="product-price-display">
                   <div className="product-price-from">From</div>
                   <div className="product-price-main">
-                    <span className="price-gbp">£{priceGbp.toLocaleString()}</span>
-                    <span className="price-sep">/</span>
-                    <span className="price-usd" style={{ color: '#0A192F' }}>${priceUsd.toLocaleString()}</span>
-                    <span className="price-sep">/</span>
-                    <span className="price-inr" style={{ color: '#0A192F' }}>₹{priceInr.toLocaleString()}</span>
+                    {convert(product.basePriceGBP || 15)}
                   </div>
                 </div>
                 <p className="product-desc">{product.description}</p>
