@@ -40,36 +40,46 @@ export default function Login() {
       return;
     }
 
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
-      email, password
-    });
-
-    if (authError) {
-      if (authError.message.includes('Invalid login credentials')) {
-        setError('Incorrect email or password. Try again.');
-      } else if (authError.message.includes('Email not confirmed')) {
-        setError('Please verify your email first.');
-      } else {
-        setError(authError.message);
-      }
-      setLoading(false);
-      return;
-    }
-
     try {
-      const { data: profile } = await supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setError('Incorrect email or password. Try again.');
+        setLoading(false);
+        return;
+      }
+
+      // Wait for session to be fully established
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Fresh profile fetch after login
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, full_name')
         .eq('id', data.user.id)
         .single();
 
-      if (profile?.role === 'admin') {
+      if (profileError || !profile) {
+        // Profile might not exist yet, default to user
+        router.push('/');
+        return;
+      }
+
+      console.log('User role:', profile.role);
+
+      if (profile.role === 'admin') {
         router.push('/admin');
       } else {
         router.push('/');
       }
     } catch (err) {
-      router.push('/');
+      console.error('Login error:', err);
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 

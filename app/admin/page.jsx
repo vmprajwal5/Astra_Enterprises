@@ -7,6 +7,8 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('Overview');
   const [loading, setLoading] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   const [quotes, setQuotes] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -24,8 +26,44 @@ export default function AdminDashboard() {
   // Settings form state
   const [settingsForm, setSettingsForm] = useState({});
 
+  // Admin auth guard
   useEffect(() => {
-    fetchData();
+    const checkAdmin = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session?.user) {
+          router.push('/login');
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role, full_name')
+          .eq('id', session.user.id)
+          .single();
+
+        console.log('Admin page check:', profile);
+
+        if (profile?.role === 'admin') {
+          setAuthorized(true);
+          fetchData();
+        } else {
+          router.push('/');
+        }
+      } catch (err) {
+        console.error('Admin auth error:', err);
+        router.push('/login');
+      } finally {
+        setChecking(false);
+      }
+    };
+
+    checkAdmin();
+  }, []);
+
+  useEffect(() => {
+    // fetchData is called by checkAdmin after auth succeeds
   }, []);
 
   const fetchData = async () => {
@@ -600,6 +638,37 @@ export default function AdminDashboard() {
       </form>
     </div>
   );
+
+  if (checking) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        background: '#0A0F1E',
+        color: '#FFFFFF',
+        fontFamily: 'Inter, sans-serif',
+        flexDirection: 'column',
+        gap: '16px',
+      }}>
+        <div style={{
+          width: '40px',
+          height: '40px',
+          border: '3px solid rgba(255,107,53,0.3)',
+          borderTop: '3px solid #FF6B35',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
+          Verifying admin access...
+        </p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (!authorized) return null;
 
   if (loading) {
     return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F4F7FA' }}><div className="spinner" style={{ width: '40px', height: '40px', border: '4px solid #CBD5E1', borderTopColor: '#FF6B35', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div></div>;
