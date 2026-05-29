@@ -1,13 +1,13 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
 
 export default function QuoteForm() {
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user, profile } = useAuth();
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   
   const [fileUploaded, setFileUploaded] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -16,6 +16,61 @@ export default function QuoteForm() {
   const [formData, setFormData] = useState({
     name: '', email: '', company: '', phone: '', bizType: '', type: '', parts: '', qty: '', details: ''
   });
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        setUser(profile ? { ...session.user, profile } : session.user);
+        if (profile) {
+          setFormData(prev => ({
+            ...prev,
+            name: profile.full_name || prev.name,
+            email: session.user.email || prev.email,
+            phone: profile.contact_number || prev.phone,
+            company: profile.business_name || prev.company
+          }));
+        } else {
+          setFormData(prev => ({ ...prev, email: session.user.email || prev.email }));
+        }
+      }
+      setAuthLoading(false);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          setUser(profile ? { ...session.user, profile } : session.user);
+          if (profile) {
+            setFormData(prev => ({
+              ...prev,
+              name: profile.full_name || prev.name,
+              email: session.user.email || prev.email,
+              phone: profile.contact_number || prev.phone,
+              company: profile.business_name || prev.company
+            }));
+          } else {
+            setFormData(prev => ({ ...prev, email: session.user.email || prev.email }));
+          }
+        } else {
+          setUser(null);
+        }
+        setAuthLoading(false);
+      }
+    );
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -30,18 +85,6 @@ export default function QuoteForm() {
     if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);
-
-  useEffect(() => {
-    if (profile) {
-      setFormData(prev => ({
-        ...prev,
-        name: profile.full_name || prev.name,
-        email: user.email || prev.email,
-        phone: profile.contact_number || prev.phone,
-        company: profile.business_name || prev.company
-      }));
-    }
-  }, [profile, user]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -115,6 +158,23 @@ export default function QuoteForm() {
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) setFileUploaded(true);
   };
+
+  if (authLoading) {
+    return (
+      <section id="quote" ref={sectionRef}>
+        <div className="container">
+          <h2 className={`section-title heading-reveal ${isVisible ? 'visible' : ''}`}>
+            <span className="heading-reveal-text">Get a Custom Quote</span>
+          </h2>
+          <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+            <div style={{ display: 'inline-block', width: '40px', height: '40px', border: '3px solid #E2E8F0', borderTopColor: 'var(--accent-orange)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <p style={{ color: 'var(--text-muted)', marginTop: '1rem' }}>Loading...</p>
+          </div>
+        </div>
+        <style dangerouslySetInnerHTML={{ __html: `@keyframes spin { to { transform: rotate(360deg); } }` }} />
+      </section>
+    );
+  }
 
   if (!user) {
     return (

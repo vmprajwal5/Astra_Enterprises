@@ -82,8 +82,8 @@ export default function CustomContact() {
 
   const contactCards = [
     { icon: '📧', title: 'Email Us', desc: 'support@astrancr.com', delay: 1 },
-    { icon: '📞', title: 'Call Us', desc: '(555) 123-4567', delay: 2 },
-    { icon: '🏢', title: 'Headquarters', desc: '123 Print Ave, New York', delay: 3 }
+    { icon: '📞', title: 'Call Us', desc: '+91 99999 99999', delay: 2 },
+    { icon: '🏢', title: 'Headquarters', desc: 'Bengaluru, Karnataka, India', delay: 3 }
   ];
 
   return (

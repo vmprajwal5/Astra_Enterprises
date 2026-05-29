@@ -11,9 +11,9 @@ export default function Hero() {
     { key: 'date', text: new Date().toLocaleDateString(), delay: 800 },
     { key: 'billTo', text: "John's Plumbing Co.", delay: 1600 },
     { key: 'dueDate', text: '30 Days', delay: 2400 },
-    { key: 'item1', text: 'NCR Work Order Pads', delay: 3200 },
-    { key: 'item2', text: 'Custom Logo Print', delay: 3800 },
-    { key: 'item3', text: 'Express Delivery', delay: 4400 }
+    { key: 'item1', text: 'NCR Work Order Pads', delay: 2600 },
+    { key: 'item2', text: 'Custom Logo Print', delay: 3400 },
+    { key: 'item3', text: 'Express Delivery', delay: 4200 }
   ];
 
   const [typedFields, setTypedFields] = useState({});

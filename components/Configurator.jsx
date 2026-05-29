@@ -122,37 +122,54 @@ export default function Configurator() {
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    let base = 50;
-    
-    if (config.bindingStyle === 'padded_back') base += 10;
-    if (config.bindingStyle === 'padded_wrap') base += 25;
-    
-    if (config.paperSize === 'a4') base *= 1.5;
-    if (config.paperSize === 'a5' || config.paperSize === 'half_letter') base *= 1.2;
-    if (config.paperSize === 'letter') base *= 1.4;
-    
-    if (config.parts === '3') base *= 1.3;
-    if (config.parts === '4') base *= 1.6;
-    
-    if (config.printSide === 'double') base *= 1.2;
-    if (config.inkColor === 'full_color') base *= 1.4;
-    
-    if (config.numbering === 'yes') base += 15;
-    
-    if (config.formType === 'bundle') base *= 2.5;
+  const calculatePrice = (cfg) => {
+    // Base price by form type
+    const formTypePrices = {
+      'invoice': 45,
+      'estimate': 45,
+      'receipt': 35,
+      'bundle': 120
+    };
+    let basePrice = formTypePrices[cfg.formType?.toLowerCase()] || 45;
 
-    const qty = parseInt(config.quantity) || 100;
-    let finalPrice = Math.round(base * (qty / 100) * 0.8);
-    let orig = finalPrice;
+    // Multiply by parts
+    const partMultiplier = { '2': 1, '3': 1.4, '4': 1.8 };
+    basePrice *= (partMultiplier[cfg.parts] || 1);
 
-    if (config.formType === 'bundle') {
-      finalPrice = Math.round(finalPrice * 0.85); // 15% discount
+    // Multiply by quantity
+    const qtyMultiplier = {
+      '100': 1, '250': 2.2, '500': 4,
+      '1000': 7.5, '2000': 14, '5000': 32
+    };
+    basePrice *= (qtyMultiplier[cfg.quantity] || 1);
+
+    // Paper size adjustment
+    if (cfg.paperSize === 'a4' || cfg.paperSize === 'letter') {
+      basePrice *= 1;
+    } else if (cfg.paperSize === 'a5' || cfg.paperSize === 'half_letter') {
+      basePrice *= 0.75;
+    } else if (cfg.paperSize === 'receipt') {
+      basePrice *= 0.6;
     }
-    
-    setOriginalPrice(orig);
+
+    // Binding adjustment
+    if (cfg.bindingStyle === 'padded_wrap') basePrice *= 1.2;
+    else if (cfg.bindingStyle === 'padded_back') basePrice *= 1.1;
+
+    // Bundle discount 15%
+    if (cfg.formType?.toLowerCase() === 'bundle') {
+      basePrice *= 0.85;
+    }
+
+    return Math.round(basePrice);
+  };
+
+  useEffect(() => {
+    const orig = calculatePrice({ ...config, formType: config.formType === 'bundle' ? 'bundle_pre' : config.formType });
+    const finalPrice = calculatePrice(config);
+    setOriginalPrice(config.formType === 'bundle' ? Math.round(finalPrice / 0.85) : finalPrice);
     setPrice(finalPrice);
-    
+
     setPulse(true);
     const t = setTimeout(() => setPulse(false), 400);
     return () => clearTimeout(t);
@@ -293,16 +310,20 @@ export default function Configurator() {
 
             <div className="live-price-box">
               <div style={{ fontSize: '0.9rem', color: '#94A3B8' }}>Estimated Total</div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', justifyContent: 'center' }}>
-                {config.formType === 'bundle' && (
-                  <span style={{ fontSize: '1.2rem', textDecoration: 'line-through', color: '#94A3B8' }}>
-                    ${originalPrice.toLocaleString()}
-                  </span>
-                )}
-                <div key={price} style={{ fontSize: '2.5rem', fontWeight: 'bold', color: config.formType === 'bundle' ? 'var(--success)' : 'var(--accent-gold)', animation: 'countUp 0.3s ease-out forwards' }}>
-                  ${price.toLocaleString()}
+              {config.formType === 'bundle' && (
+                <div style={{ fontSize: '0.85rem', textDecoration: 'line-through', color: '#94A3B8', textAlign: 'center', marginBottom: '4px' }}>
+                  Was: ${originalPrice.toLocaleString()}
                 </div>
+              )}
+              <div key={price} style={{ fontSize: '2.4rem', fontWeight: 'bold', color: config.formType === 'bundle' ? 'var(--success)' : 'var(--accent-gold)', animation: 'countUp 0.3s ease-out forwards', textAlign: 'center' }}>
+                ${price.toLocaleString()}
               </div>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '0.5rem', fontSize: '0.85rem', color: '#94A3B8', flexWrap: 'wrap' }}>
+                <span>£{Math.round(price * 0.79).toLocaleString()}</span>
+                <span style={{ opacity: 0.4 }}>·</span>
+                <span>₹{Math.round(price * 83).toLocaleString()}</span>
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#64748B', textAlign: 'center', marginTop: '0.4rem' }}>USD · GBP · INR — indicative pricing</div>
             </div>
             <button className="btn btn-primary" style={{ width: '100%' }}>Proceed to Quote</button>
             <div className="config-tag-chips">

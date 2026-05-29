@@ -32,6 +32,29 @@ export default function Products() {
 
   const [products, setProducts] = useState([]);
 
+  const staticProducts = [
+    {
+      name: 'Blank NCR Sheets',
+      description: 'Plain carbonless paper sets ready for your custom stamp or handwriting. Available in 2, 3, and 4-part sets.',
+      features: ['2, 3 or 4-part sets', 'White / Yellow / Pink paper', 'Standard A4 & A5 sizes', 'Ideal for tradespeople'],
+      price_usd: 20, price_gbp: 15, price_inr: 1500
+    },
+    {
+      name: 'Custom Printed NCR',
+      description: 'Fully custom-designed NCR forms with your logo, branding, and layout. Perfect for invoices, estimates, and receipts.',
+      features: ['Full-colour or black ink', 'Logo & branding included', 'Sequential numbering', 'Padded & loose options'],
+      price_usd: 55, price_gbp: 45, price_inr: 4500
+    },
+    {
+      name: 'Digital Templates',
+      description: 'Editable invoice and receipt templates for digital use. Compatible with Google Docs, Word, and PDF editors.',
+      features: ['Instant download', 'Editable fields', 'Professionally designed', 'Lifetime access'],
+      price_usd: 12, price_gbp: 10, price_inr: 999
+    }
+  ];
+
+  const displayProducts = products.length > 0 ? products : staticProducts;
+
   return (
     <section id="products" ref={sectionRef} style={{ padding: '6rem 5%' }}>
       <div className="container">
@@ -43,11 +66,15 @@ export default function Products() {
         </p>
 
         <div className="product-grid">
-          {products.map((product, i) => {
+          {displayProducts.map((product, i) => {
             const cssId = product.name.toLowerCase().includes('blank') ? 'blank-ncr' 
                         : product.name.toLowerCase().includes('digital') ? 'digital-ncr' 
                         : 'custom-ncr';
             
+            const priceUsd = product.price_usd || 0;
+            const priceGbp = product.price_gbp || Math.round(priceUsd * 0.79);
+            const priceInr = product.price_inr || Math.round(priceUsd * 83);
+
             return (
             <div key={i} className={`product-card ${isVisible ? `anim-scale-in delay-${i + 1}` : ''}`} style={{ opacity: 0 }}>
               <div className="card-top-edge"></div>
@@ -102,9 +129,16 @@ export default function Products() {
               </div>
 
               <div className="product-content">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <h3 className="product-title">{product.name}</h3>
-                  <div className="p-price-badge">{product.price_gbp}</div>
+                <h3 className="product-title">{product.name}</h3>
+                <div className="product-price-display">
+                  <div className="product-price-from">From</div>
+                  <div className="product-price-main">
+                    <span className="price-gbp">£{priceGbp.toLocaleString()}</span>
+                    <span className="price-sep">/</span>
+                    <span className="price-usd" style={{ color: '#0A192F' }}>${priceUsd.toLocaleString()}</span>
+                    <span className="price-sep">/</span>
+                    <span className="price-inr" style={{ color: '#0A192F' }}>₹{priceInr.toLocaleString()}</span>
+                  </div>
                 </div>
                 <p className="product-desc">{product.description}</p>
                 <ul className="product-features">
@@ -248,6 +282,39 @@ export default function Products() {
         .product-card:hover .p-cta-btn {
           opacity: 1;
           transform: translateY(0);
+        }
+
+        .product-price-display {
+          margin-bottom: 0.8rem;
+        }
+        .product-price-from {
+          font-size: 0.75rem;
+          color: #94A3B8;
+          font-weight: 500;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 2px;
+        }
+        .product-price-main {
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: #FF6B35;
+          display: flex;
+          align-items: baseline;
+          gap: 0.3rem;
+          flex-wrap: wrap;
+        }
+        .price-gbp {
+          font-size: 1.35rem;
+          color: #FF6B35;
+        }
+        .price-sep {
+          color: #CBD5E1;
+          font-weight: 400;
+        }
+        .price-usd, .price-inr {
+          font-size: 1.05rem;
+          color: #0A192F;
         }
       `}} />
     </section>
