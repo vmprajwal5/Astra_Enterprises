@@ -42,38 +42,32 @@ export default function Login() {
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+        email: email,
+        password: password,
+      })
 
       if (error) {
-        setError('Incorrect email or password. Try again.');
-        setLoading(false);
-        return;
+        setError('Incorrect email or password.')
+        setLoading(false)
+        return
       }
 
-      // Wait for session to be fully established
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Small delay to ensure session is ready
+      await new Promise(resolve => setTimeout(resolve, 800))
 
-      // Fresh profile fetch after login
+      // Fetch profile fresh
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role, full_name')
+        .select('role')
         .eq('id', data.user.id)
-        .single();
+        .single()
 
-      if (profileError || !profile) {
-        // Profile might not exist yet, default to user
-        router.push('/');
-        return;
-      }
+      console.log('Login profile fetch:', profile, profileError)
 
-      console.log('User role:', profile.role);
-
-      if (profile.role === 'admin') {
-        router.push('/admin');
+      if (profile?.role === 'admin') {
+        window.location.href = '/admin'
       } else {
-        router.push('/');
+        window.location.href = '/'
       }
     } catch (err) {
       console.error('Login error:', err);

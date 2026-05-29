@@ -1,55 +1,64 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 
 export async function middleware(req) {
   const res = NextResponse.next()
+  const path = req.nextUrl.pathname
+
+  // Only run on /admin routes
+  if (!path.startsWith('/admin')) {
+    return res
+  }
 
   try {
-    const supabase = createMiddlewareClient({ req, res })
+    // Create supabase client for middleware
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        cookies: {
+          getAll() {
+            return parseCookieHeader(req.headers.get('Cookie') ?? '')
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              res.headers.append(
+                'Set-Cookie',
+                serializeCookieHeader(name, value, options)
+              )
+            })
+          },
+        },
+      }
+    )
+
     const { data: { session } } = await supabase.auth.getSession()
 
-    const path = req.nextUrl.pathname
+    // Not logged in - redirect to login
+    if (!session?.user) {
+      return NextResponse.redirect(new URL('/login', req.url))
+    }
 
-    // Redirect logged-in users away from login/register
-    if (session && (path === '/login' || path === '/register')) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single()
+    // Check admin role
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single()
 
-      if (profile?.role === 'admin') {
-        return NextResponse.redirect(new URL('/admin', req.url))
-      }
+    // Not admin - redirect to home
+    if (!profile || profile.role !== 'admin') {
       return NextResponse.redirect(new URL('/', req.url))
     }
 
-    // Protect /admin routes
-    if (path.startsWith('/admin')) {
-      if (!session) {
-        return NextResponse.redirect(new URL('/login', req.url))
-      }
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single()
-
-      console.log('Admin check - role:', profile?.role)
-
-      if (!profile || profile.role !== 'admin') {
-        return NextResponse.redirect(new URL('/', req.url))
-      }
-    }
+    return res
 
   } catch (err) {
     console.error('Middleware error:', err)
+    return NextResponse.redirect(new URL('/login', req.url))
   }
-
-  return res
 }
 
 export const config = {
-  matcher: ['/login', '/register', '/admin/:path*']
+  matcher: ['/admin/:path*']
 }

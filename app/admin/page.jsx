@@ -28,38 +28,40 @@ export default function AdminDashboard() {
 
   // Admin auth guard
   useEffect(() => {
-    const checkAdmin = async () => {
+    const verifyAdmin = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession()
 
-        if (!session?.user) {
-          router.push('/login');
-          return;
+        if (!session) {
+          window.location.href = '/login'
+          return
         }
 
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role, full_name')
+          .select('role')
           .eq('id', session.user.id)
-          .single();
+          .single()
 
-        console.log('Admin page check:', profile);
+        console.log('Admin page check:', profile)
 
-        if (profile?.role === 'admin') {
-          setAuthorized(true);
-          fetchData();
-        } else {
-          router.push('/');
+        if (profile?.role !== 'admin') {
+          window.location.href = '/'
+          return
         }
+
+        // Admin confirmed - load dashboard data
+        setAuthorized(true)
+        fetchData()
       } catch (err) {
         console.error('Admin auth error:', err);
-        router.push('/login');
+        window.location.href = '/login'
       } finally {
         setChecking(false);
       }
     };
 
-    checkAdmin();
+    verifyAdmin();
   }, []);
 
   useEffect(() => {
